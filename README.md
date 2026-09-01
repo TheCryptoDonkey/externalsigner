@@ -1,5 +1,7 @@
 # LNbits External Signer
 
+[![CI](https://github.com/TheCryptoDonkey/externalsigner/actions/workflows/ci.yml/badge.svg)](https://github.com/TheCryptoDonkey/externalsigner/actions/workflows/ci.yml)
+
 Use a NIP-46 remote signer from LNbits without importing the user's identity
 `nsec`.
 
@@ -16,9 +18,9 @@ request.
 ## Current status
 
 Version `0.1.0` is an unpublished release candidate. The implementation and
-independent signer tests pass locally, but there is not yet a tagged release,
-public installation record or production soak. Do not present it as a released
-production extension until every gate in
+independent signer tests pass locally and the public CI matrix is green, but
+there is not yet a tagged release, registry installation record or production
+soak. Do not present it as a released production extension until every gate in
 [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) is complete.
 
 This is an LNbits extension. It is not a wallet backend, Lightning node,

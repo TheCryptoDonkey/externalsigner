@@ -10,13 +10,13 @@ claim.
 - [x] Package and extension metadata name The Crypto Donkey.
 - [x] Contribution and third-party notice files exist.
 - [x] Repository-level funding links are explicit.
-- [ ] Public repository exists at the URLs in extension metadata.
-- [ ] Protected `main` branch and required CI checks are enabled.
+- [x] Public repository exists at the URLs in extension metadata.
+- [x] Protected `main` branch and required CI checks are enabled.
 
 ## Build and release
 
-- [ ] Clean clone passes Python and frontend quality gates.
-- [ ] CI passes Python 3.10, 3.11 and 3.12 against stable and development LNbits.
+- [x] Clean clone passes Python and frontend quality gates.
+- [x] CI passes Python 3.10, 3.11 and 3.12 against stable and development LNbits.
 - [ ] Dependency audit is green or every finding has a written, time-bounded
       risk decision.
 - [ ] `CHANGELOG.md` replaces `Unreleased` with the release date before the tag
@@ -67,10 +67,10 @@ claim.
 
 ## Claims
 
-- [ ] Public copy matches only the evidence above.
-- [ ] No physical Heartwood support claim appears until a board completes pairing,
+- [x] Public copy matches only the evidence above.
+- [x] No physical Heartwood support claim appears until a board completes pairing,
       signing, restart and revocation acceptance.
-- [ ] No copy implies that a signature proves publication, settlement or a
+- [x] No copy implies that a signature proves publication, settlement or a
       physical-world event.
 
 ## Go/no-go record

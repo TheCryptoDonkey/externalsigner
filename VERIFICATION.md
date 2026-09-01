@@ -25,6 +25,12 @@ were run separately and passed as recorded below.
 The same final-source ordinary suite also passed `31 passed, 2 skipped` on
 LNbits 1.6.0rc4 commit `a16dd7cee3b89785c69f08f41462e7a2cecb62d3`.
 
+Public CI run
+[`33506814995`](https://github.com/TheCryptoDonkey/externalsigner/actions/runs/33506814995)
+passed the complete quality and ordinary test gates for all six combinations
+of Python 3.10, 3.11 and 3.12 with LNbits 1.5.6 and the LNbits development
+branch.
+
 The ordinary suite includes a real in-process WebSocket relay test for the
 public `nostr-sdk` transport. It proves per-relay subscription filters,
 delivery of a signed kind-24133 response and targeted publication that does not
@@ -116,7 +122,13 @@ boundary or any physical-world action.
 
 ## Publication state
 
-This repository remains local with no commit, remote, CI run, signed tag,
-release archive, archive hash, registry entry, PostgreSQL run, staging soak or
-physical-device acceptance. Those are release gates, not implied by the green
-local evidence above.
+The initial source commit
+[`07bc1394a631916d26be6339d5117dccfead9a94`](https://github.com/TheCryptoDonkey/externalsigner/commit/07bc1394a631916d26be6339d5117dccfead9a94)
+is public at `TheCryptoDonkey/externalsigner`, with the green CI matrix recorded
+above. GitHub recognises the MIT licence; secret scanning, push protection and
+private vulnerability reporting are enabled.
+
+There is still no signed tag, release archive, archive hash, LNbits registry
+entry, extension-manager install, PostgreSQL run, staging soak or
+physical-device acceptance. Those remain release gates and are not implied by
+the public repository or green CI.
