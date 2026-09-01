@@ -27,12 +27,13 @@ The same final-source ordinary suite also passed `39 passed, 3 skipped` on
 LNbits 1.6.0rc4 commit `a16dd7cee3b89785c69f08f41462e7a2cecb62d3`.
 
 Public `main` CI run
-[`33523056861`](https://github.com/TheCryptoDonkey/externalsigner/actions/runs/33523056861)
+[`33535055854`](https://github.com/TheCryptoDonkey/externalsigner/actions/runs/33535055854)
 passed the complete quality and ordinary test gates for all six combinations
 of Python 3.10, 3.11 and 3.12 with LNbits 1.5.6 and the pinned LNbits
 development commit. The same run passed fresh PostgreSQL migration and the
-ordinary suite on both LNbits lines. All eight jobs are required by protected
-`main`.
+ordinary suite on both LNbits lines, the checksum-pinned released `nak` signer
+job and the real-browser accessibility job. All ten jobs are required by
+protected `main` with strict up-to-date checking.
 
 The ordinary suite includes a real in-process WebSocket relay test for the
 public `nostr-sdk` transport. It proves per-relay subscription filters,
@@ -49,8 +50,8 @@ The final empty and QR-state captures produced no failed HTTP response,
 uncaught browser error or missing asset. The QR capture uses an explicitly fake
 published fixture; it contains no live pairing capability.
 
-Public pull-request CI run
-[`33534316219`](https://github.com/TheCryptoDonkey/externalsigner/actions/runs/33534316219)
+Public merged-main CI run
+[`33535055854`](https://github.com/TheCryptoDonkey/externalsigner/actions/runs/33535055854)
 also mounted the exact candidate in a fresh LNbits 1.5.6 process and ran Chrome
 with Axe 4.10.3. The light and dark desktop page, bunker dialog, 390 px mobile
 page and QR dialog produced no WCAG 2 A/AA violation or browser error. Both
@@ -89,8 +90,8 @@ test and Heartwood flow separately exercise the real relay transport.
 
 ## Released `nak` signer
 
-Public pull-request CI run
-[`33534316219`](https://github.com/TheCryptoDonkey/externalsigner/actions/runs/33534316219)
+Public merged-main CI run
+[`33535055854`](https://github.com/TheCryptoDonkey/externalsigner/actions/runs/33535055854)
 downloaded the upstream `nak` v0.20.6 Linux release, verified SHA-256
 `b44b36c792fbc3fb73b7ba3bbc94beda2219826271aa8d5f130f569c3817c3b9`
 before execution and printed `nak version v0.20.6`. Both released-signer tests
@@ -207,6 +208,10 @@ Pre-release hardening was merged through protected
 [pull request 3](https://github.com/TheCryptoDonkey/externalsigner/pull/3) as
 GitHub-verified commit
 [`9a618f801d9872caffe887d22584db8dcd82e37e`](https://github.com/TheCryptoDonkey/externalsigner/commit/9a618f801d9872caffe887d22584db8dcd82e37e).
+Released-signer, relay-recovery and browser acceptance then merged through
+[pull request 8](https://github.com/TheCryptoDonkey/externalsigner/pull/8) as
+GitHub-verified commit
+[`9a3fb96c532d26d5c93e0f2d3fcebad2cc9d1b6c`](https://github.com/TheCryptoDonkey/externalsigner/commit/9a3fb96c532d26d5c93e0f2d3fcebad2cc9d1b6c).
 The repository is public at `TheCryptoDonkey/externalsigner`. GitHub recognises
 the MIT licence; secret scanning, push protection and private vulnerability
 reporting are enabled.
