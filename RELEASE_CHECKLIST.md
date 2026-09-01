@@ -18,7 +18,8 @@ claim.
 - [x] Clean clone passes Python and frontend quality gates.
 - [x] CI passes Python 3.10, 3.11 and 3.12 against stable and development LNbits.
 - [ ] Dependency audit is green or every finding has a written, time-bounded
-      risk decision.
+      risk decision. Tracked by
+      [issue 4](https://github.com/TheCryptoDonkey/externalsigner/issues/4).
 - [ ] `CHANGELOG.md` replaces `Unreleased` with the release date before the tag
       is created.
 - [ ] `v0.1.0` tag matches `config.json` and `pyproject.toml`.
@@ -28,6 +29,9 @@ claim.
 - [ ] LNbits registry manifest passes its checker.
 
 ## Functional acceptance
+
+Independent-signer and signer-side revocation work is tracked by
+[issue 6](https://github.com/TheCryptoDonkey/externalsigner/issues/6).
 
 - [x] Unit and account-isolation tests pass.
 - [x] Kind-scoped permission and malicious-response tests pass.
@@ -49,6 +53,9 @@ claim.
 
 ## Operations
 
+Staging, network-recovery and rollback work is tracked by
+[issue 5](https://github.com/TheCryptoDonkey/externalsigner/issues/5).
+
 - [ ] Single-worker staging soak passes for at least seven days.
 - [x] Multi-worker behaviour is explicitly unsupported in release notes.
 - [ ] Relay outage, DNS failure, TLS failure and recovery are exercised.
@@ -57,6 +64,9 @@ claim.
 - [ ] Rollback procedure is rehearsed against the release archive and backup.
 
 ## User experience
+
+First-user and accessibility acceptance is tracked by
+[issue 6](https://github.com/TheCryptoDonkey/externalsigner/issues/6).
 
 - [ ] A first-time user pairs by bunker invite without verbal assistance.
 - [ ] A first-time user pairs by QR without verbal assistance.
