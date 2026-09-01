@@ -88,3 +88,20 @@ def test_secret_envelope_is_authenticated_and_handles_block_aligned_keys():
     replacement = "A" if encrypted[-1] != "A" else "B"
     with pytest.raises(ValueError):
         decrypt_secret(encrypted[:-1] + replacement)
+
+
+def test_auth_secret_rotation_invalidates_existing_capabilities():
+    original = settings.auth_secret_key
+    try:
+        settings.auth_secret_key = "old-test-auth-secret"
+        encrypted = encrypt_secret("disposable-client-capability")
+        assert encrypted
+
+        settings.auth_secret_key = "new-test-auth-secret"
+        with pytest.raises(ValueError):
+            decrypt_secret(encrypted)
+        replacement = encrypt_secret("new-disposable-client-capability")
+        assert replacement
+        assert decrypt_secret(replacement) == "new-disposable-client-capability"
+    finally:
+        settings.auth_secret_key = original

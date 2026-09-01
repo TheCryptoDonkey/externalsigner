@@ -95,14 +95,14 @@ async def update_connection(
 async def claim_nostrconnect_handshake(connection_id: str, remote_signer_pubkey: str) -> bool:
     now = datetime.now(timezone.utc)
     result = await db.execute(
-        """
+        f"""
         UPDATE externalsigner.connections
         SET remote_signer_pubkey = :remote_signer_pubkey,
             encrypted_connect_secret = NULL,
             pairing_expires_at = NULL,
             status = 'verifying',
             encrypted_last_error = NULL,
-            updated_at = :updated_at
+            updated_at = {db.timestamp_placeholder("updated_at")}
         WHERE id = :id
           AND mode = 'nostrconnect'
           AND status = 'awaiting_signer'
@@ -161,11 +161,11 @@ async def get_operation_by_request_id(request_id: str) -> SignerOperation | None
 
 async def claim_operation_response(request_id: str, response_event_id: str) -> bool:
     result = await db.execute(
-        """
+        f"""
         UPDATE externalsigner.operations
         SET status = 'processing',
             response_event_id = :response_event_id,
-            updated_at = :updated_at
+            updated_at = {db.timestamp_placeholder("updated_at")}
         WHERE request_id = :request_id
           AND status IN ('pending', 'sent', 'auth_required')
         """,
@@ -204,9 +204,10 @@ async def count_open_operations_for_connection(connection_id: str) -> int:
 
 async def count_recent_operations_for_connection(connection_id: str, since: datetime) -> int:
     row: Any = await db.fetchone(
-        """
+        f"""
         SELECT COUNT(*) AS count FROM externalsigner.operations
-        WHERE connection_id = :connection_id AND created_at >= :since
+        WHERE connection_id = :connection_id
+          AND created_at >= {db.timestamp_placeholder("since")}
         """,
         {"connection_id": connection_id, "since": since},
     )
@@ -215,10 +216,10 @@ async def count_recent_operations_for_connection(connection_id: str, since: date
 
 async def get_stale_operations(before: datetime) -> list[SignerOperation]:
     return await db.fetchall(
-        """
+        f"""
         SELECT * FROM externalsigner.operations
         WHERE status IN ('pending', 'sent', 'auth_required', 'processing')
-          AND updated_at < :before
+          AND updated_at < {db.timestamp_placeholder("before")}
         """,
         {"before": before},
         SignerOperation,
@@ -227,9 +228,10 @@ async def get_stale_operations(before: datetime) -> list[SignerOperation]:
 
 async def delete_terminal_operations_before(before: datetime) -> None:
     await db.execute(
-        """
+        f"""
         DELETE FROM externalsigner.operations
-        WHERE status IN ('complete', 'failed') AND updated_at < :before
+        WHERE status IN ('complete', 'failed')
+          AND updated_at < {db.timestamp_placeholder("before")}
         """,
         {"before": before},
     )
@@ -237,12 +239,12 @@ async def delete_terminal_operations_before(before: datetime) -> None:
 
 async def get_expired_pairings(before: datetime) -> list[ExternalSignerConnection]:
     return await db.fetchall(
-        """
+        f"""
         SELECT * FROM externalsigner.connections
         WHERE mode = 'nostrconnect'
           AND status = 'awaiting_signer'
           AND pairing_expires_at IS NOT NULL
-          AND pairing_expires_at <= :before
+          AND pairing_expires_at <= {db.timestamp_placeholder("before")}
         """,
         {"before": before},
         ExternalSignerConnection,

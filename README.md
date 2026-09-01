@@ -23,6 +23,9 @@ there is not yet a tagged release, registry installation record or production
 soak. Do not present it as a released production extension until every gate in
 [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) is complete.
 
+The inherited LNbits dependency audit is currently a production blocker. See
+[HOST_DEPENDENCIES.md](HOST_DEPENDENCIES.md) for the exact evidence and decision.
+
 This is an LNbits extension. It is not a wallet backend, Lightning node,
 payment processor or second implementation of LNbits.
 

@@ -56,6 +56,10 @@ label and a key derived from the LNbits auth secret. Changing the LNbits auth
 secret makes existing External Signer ciphertext undecryptable. Plan rotation
 as a re-pairing event.
 
+Runtime warnings contain a controlled failure category and exception class,
+not the exception message. This prevents relay or dependency failures from
+copying decrypted request data into logs.
+
 Revocation clears the live client capability and operation history from the
 current database. SQLite pages, filesystem snapshots and backups may retain old
 ciphertext. Protect or expire them separately.
