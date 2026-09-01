@@ -1,6 +1,6 @@
 # Verification record
 
-Date: 2026-09-01
+Date: 2026-09-02
 
 This record separates extension evidence, host-dependency evidence,
 interoperability evidence and physical-device evidence. It does not turn a
@@ -11,7 +11,7 @@ local test run into a public release.
 The ordinary suite passed on Python 3.12 and LNbits 1.5.6:
 
 ```text
-39 passed, 3 skipped
+52 passed, 3 skipped
 Ruff: passed
 Black: passed
 mypy: passed
@@ -23,11 +23,11 @@ The three skips are the deliberately opt-in independent-signer and hardware
 modules. The software signer modules were run separately and passed as
 recorded below; the physical-device boundary remains open.
 
-The same final-source ordinary suite also passed `39 passed, 3 skipped` on
-LNbits 1.6.0rc4 commit `a16dd7cee3b89785c69f08f41462e7a2cecb62d3`.
+The same final-source ordinary suite also passed on LNbits 1.6.0rc4 commit
+`a16dd7cee3b89785c69f08f41462e7a2cecb62d3`.
 
 Public `main` CI run
-[`33535055854`](https://github.com/TheCryptoDonkey/externalsigner/actions/runs/33535055854)
+[`33572675403`](https://github.com/TheCryptoDonkey/externalsigner/actions/runs/33572675403)
 passed the complete quality and ordinary test gates for all six combinations
 of Python 3.10, 3.11 and 3.12 with LNbits 1.5.6 and the pinned LNbits
 development commit. The same run passed fresh PostgreSQL migration and the
@@ -51,14 +51,18 @@ uncaught browser error or missing asset. The QR capture uses an explicitly fake
 published fixture; it contains no live pairing capability.
 
 Public merged-main CI run
-[`33535055854`](https://github.com/TheCryptoDonkey/externalsigner/actions/runs/33535055854)
+[`33572675403`](https://github.com/TheCryptoDonkey/externalsigner/actions/runs/33572675403)
 also mounted the exact candidate in a fresh LNbits 1.5.6 process and ran Chrome
 with Axe 4.10.3. The light and dark desktop page, bunker dialog, 390 px mobile
-page and QR dialog produced no WCAG 2 A/AA violation or browser error. Both
-route buttons opened from keyboard activation. At 200% root text size, the
-extension retained both route choices and had no horizontal overflow. This
-automated result supports, but does not replace, keyboard-only and
-screen-reader acceptance by people.
+page and QR dialog produced no WCAG 2 A/AA violation or browser error. The same
+run rendered connected, expired-QR, disconnected, failed-operation and revoked
+states at 1440 px and 390 px in both themes. Keyboard activation opened the
+connection row, Test connection, Create fresh pairing, Retry connection and
+the real revoke confirmation. No required explanation or action was missing,
+no input asked for an `nsec`, and no state overflowed horizontally. At 200% root
+text size, the extension retained both route choices and had no horizontal
+overflow. This automated result supports, but does not replace, keyboard-only
+and screen-reader acceptance by people.
 
 This proves a source-mounted development installation. It does not prove an
 extension-manager archive install or an upgrade from a previous public
@@ -162,15 +166,35 @@ decision and closure criteria are in
 [HOST_DEPENDENCIES.md](HOST_DEPENDENCIES.md).
 
 Public dependency-audit run
-[`33523269927`](https://github.com/TheCryptoDonkey/externalsigner/actions/runs/33523269927)
-reproduced both results from the merged source. Production remains blocked by
+[`33572801996`](https://github.com/TheCryptoDonkey/externalsigner/actions/runs/33572801996)
+reran both complete inherited environments against merged commit
+`06b14de590e257b93ee6c0b7f5b754ac32155c1d`. Both audits remained red and each
+job uploaded its machine-readable JSON report despite the expected failure.
+Production remains blocked by
 [issue 4](https://github.com/TheCryptoDonkey/externalsigner/issues/4).
+
+## Staging evidence path
+
+`scripts/staging_acceptance.py` passed thirteen focused tests. The controller
+refuses a soak shorter than seven days, anything other than one worker, an HTTP
+origin or a probe gap above fifteen minutes. It records an append-only,
+chronological SHA-256 chain of authenticated signer pings, observed relay/DNS/TLS
+failure, recovery drills and sanitised monitoring-review artifact hashes. A
+missing cookie cannot satisfy a planned network-failure check, and an answering
+signer makes that expected-failure command fail.
+
+This is evidence tooling, not elapsed evidence. No real HTTPS staging instance,
+seven-day run, archive rollback or human operator sign-off was performed in this
+source pass. The exact operating procedure and secret-handling boundary are in
+[STAGING.md](STAGING.md), and
+[issue 5](https://github.com/TheCryptoDonkey/externalsigner/issues/5) remains
+open.
 
 ## PostgreSQL and recovery
 
 A fresh `postgres:16-alpine` database ran the real LNbits 1.5.6 core migration
 entry point followed by External Signer migrations 1 and 2. The complete
-ordinary suite then passed `39 passed, 3 skipped` on PostgreSQL.
+ordinary suite then passed `52 passed, 3 skipped` on PostgreSQL.
 
 This run found and fixed a backend-specific defect: direct timestamp parameters
 must use LNbits' database-aware timestamp placeholder. The claim, rate-limit,
@@ -212,6 +236,10 @@ Released-signer, relay-recovery and browser acceptance then merged through
 [pull request 8](https://github.com/TheCryptoDonkey/externalsigner/pull/8) as
 GitHub-verified commit
 [`9a3fb96c532d26d5c93e0f2d3fcebad2cc9d1b6c`](https://github.com/TheCryptoDonkey/externalsigner/commit/9a3fb96c532d26d5c93e0f2d3fcebad2cc9d1b6c).
+Pre-release gate tooling and expanded state/accessibility acceptance merged
+through [pull request 12](https://github.com/TheCryptoDonkey/externalsigner/pull/12)
+as GitHub-verified commit
+[`06b14de590e257b93ee6c0b7f5b754ac32155c1d`](https://github.com/TheCryptoDonkey/externalsigner/commit/06b14de590e257b93ee6c0b7f5b754ac32155c1d).
 The repository is public at `TheCryptoDonkey/externalsigner`. GitHub recognises
 the MIT licence; secret scanning, push protection and private vulnerability
 reporting are enabled.
