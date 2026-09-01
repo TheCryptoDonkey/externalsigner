@@ -66,7 +66,8 @@ def test_licence_funding_and_document_location_policy():
     assert licence.startswith("MIT License\n\nCopyright (c) 2026 The Crypto Donkey\n")
     assert funding.splitlines() == ["github: TheCryptoDonkey", "ko_fi: brays"]
     assert "docs/" in ignored
-    assert not any((ROOT / "docs").iterdir())
+    docs_dir = ROOT / "docs"
+    assert not docs_dir.exists() or not any(docs_dir.iterdir())
     for name in (
         "ADMIN.md",
         "ARCHITECTURE.md",
