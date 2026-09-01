@@ -12,6 +12,8 @@ and the LNbits authentication secret as security-sensitive material.
 
 The extension uses LNbits' existing `nostr-sdk`, `coincurve` and
 `pycryptodomex` packages. It does not require the Nostr Client extension.
+The current inherited host audit blocks production release; see
+[HOST_DEPENDENCIES.md](HOST_DEPENDENCIES.md).
 
 ## Install a tagged release
 
@@ -113,6 +115,10 @@ Monitor for:
 
 Never log decrypted parameters, results, pairing links, approval URLs, client
 secrets or account identifiers in external monitoring.
+
+The extension runtime logs controlled failure categories and exception class
+names. It deliberately omits exception messages because dependency or relay
+errors can contain request data.
 
 ## Upgrade and rollback
 

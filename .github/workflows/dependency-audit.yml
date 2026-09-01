@@ -10,16 +10,30 @@ permissions:
 
 jobs:
   inherited-lnbits-runtime:
+    name: LNbits ${{ matrix.name }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: stable-v1.5.6
+            ref: v1.5.6
+          - name: dev-a16dd7c
+            ref: a16dd7cee3b89785c69f08f41462e7a2cecb62d3
     steps:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
-      - name: Install the stable LNbits runtime
+      - name: Install the LNbits runtime
+        env:
+          LNBITS_REF: ${{ matrix.ref }}
         run: |
           python -m venv .audit-venv
           .audit-venv/bin/python -m pip install --upgrade pip pip-audit
           .audit-venv/bin/python -m pip install \
-            "lnbits @ git+https://github.com/lnbits/lnbits.git@v1.5.6"
+            "lnbits @ git+https://github.com/lnbits/lnbits.git@${LNBITS_REF}"
+          .audit-venv/bin/python -m pip check
+          .audit-venv/bin/python -m pip freeze | grep -Ei \
+            '^(lnbits|pillow|pyjwt|starlette)=='
       - name: Audit the complete inherited runtime
         run: .audit-venv/bin/python -m pip_audit --strict

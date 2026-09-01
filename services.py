@@ -441,7 +441,7 @@ async def revoke_connection(user_id: str, connection_id: str) -> ExternalSignerC
                 allow_unconnected=True,
             )
         except Exception as exc:
-            logger.info(f"[externalsigner] Logout courtesy request was not delivered: {exc}")
+            _log_exception("Logout courtesy request was not delivered", exc)
     connection.status = "revoked"
     connection.encrypted_client_secret = ""
     connection.encrypted_connect_secret = None
@@ -484,11 +484,13 @@ async def retry_connection(user_id: str, connection_id: str) -> SignerOperation 
     return await _start_bunker_connect(connection)
 
 
-async def run_maintenance(*, force: bool = False) -> None:
+async def run_maintenance(*, force: bool = False, now: datetime | None = None) -> None:
     monotonic_now = time.monotonic()
     if not force and monotonic_now < runtime_state.next_maintenance_at:
         return
-    now = datetime.now(timezone.utc)
+    now = now or datetime.now(timezone.utc)
+    if now.tzinfo is None:
+        raise ValueError("Maintenance time must include a timezone.")
     stale_before = now - timedelta(seconds=OPERATION_TIMEOUT_SECONDS)
     for operation in await get_stale_operations(stale_before):
         await _fail_operation(operation, "Signer request expired before a final response arrived.")
@@ -549,7 +551,7 @@ async def run_nip46_runtime() -> None:
         except asyncio.CancelledError:
             raise
         except Exception as exc:
-            logger.warning(f"[externalsigner] NIP-46 runtime error: {exc}")
+            _log_exception("NIP-46 runtime error", exc)
             await asyncio.sleep(1)
         await asyncio.sleep(0.2)
 
@@ -589,7 +591,7 @@ async def process_transport_events() -> None:
         try:
             await handle_response_event(event)
         except Exception as exc:
-            logger.warning(f"[externalsigner] Ignoring invalid NIP-46 response: {exc}")
+            _log_exception("Ignoring invalid NIP-46 response", exc)
         finally:
             runtime_state.seen_event_ids.add(event_id)
             if len(runtime_state.seen_event_ids) > 4096:
@@ -978,3 +980,8 @@ async def _fail_connection(
 def _safe_message(message: str) -> str:
     cleaned = " ".join(str(message).split())
     return cleaned[:8192] or "External signer request failed."
+
+
+def _log_exception(context: str, exc: Exception) -> None:
+    """Log the failure category without copying exception data into monitoring."""
+    logger.warning("[externalsigner] {} ({})", context, type(exc).__name__)

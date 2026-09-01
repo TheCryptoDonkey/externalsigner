@@ -22,4 +22,10 @@
   responsive dark/light styling and final-source browser screenshots.
 - Add operator, integration, architecture, contribution, security and release
   documentation plus CI and release workflows.
+- Treat one LNbits application worker as the complete supported deployment
+  scope for 0.1.0. Multi-worker operation is explicitly unsupported.
+- Add restart, auth-secret rotation, clock-controlled expiry and retention, and
+  data-safe runtime logging coverage.
+- Record the inherited LNbits host dependency blocker without overriding core
+  framework versions from the extension.
 - Correct all project copyright and authorship to The Crypto Donkey.

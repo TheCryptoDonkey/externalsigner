@@ -4,23 +4,27 @@ from urllib.parse import parse_qs, urlsplit
 from uuid import uuid4
 
 import pytest
+from loguru import logger
 from nostr_sdk import Keys
 
 from externalsigner.crud import (
+    create_operation,
     db,
     get_connection,
     get_operation,
     get_operation_by_request_id,
     update_connection,
 )
-from externalsigner.helpers import decrypt_json, decrypt_secret
+from externalsigner.helpers import decrypt_json, decrypt_secret, encrypt_json
 from externalsigner.models import CreateBunkerConnection, CreateNostrConnectConnection
 from externalsigner.protocol import derive_pubkey
 from externalsigner.services import (
+    _log_exception,
     connection_view,
     create_bunker_connection,
     create_nostrconnect_connection,
     handle_response_event,
+    refresh_runtime_state,
     request_signer,
     request_signer_for_user,
     retry_connection,
@@ -39,6 +43,17 @@ from .fakes import (
 
 def key_hex() -> str:
     return Keys.generate().secret_key().to_hex()
+
+
+def test_runtime_exception_logging_omits_exception_data():
+    messages: list[str] = []
+    sink = logger.add(messages.append, format="{message}")
+    try:
+        _log_exception("NIP-46 runtime error", RuntimeError("secret-account-sentinel"))
+    finally:
+        logger.remove(sink)
+    assert messages == ["[externalsigner] NIP-46 runtime error (RuntimeError)\n"]
+    assert "secret-account-sentinel" not in "".join(messages)
 
 
 async def bootstrap_bunker() -> tuple:
@@ -454,9 +469,9 @@ async def test_maintenance_expires_abandoned_operations_and_scrubs_params():
     operation = await request_signer(connection, "ping", [])
     stale = datetime.now(timezone.utc) - timedelta(hours=1)
     await db.execute(
-        """
+        f"""
         UPDATE externalsigner.operations
-        SET updated_at = :updated_at
+        SET updated_at = {db.timestamp_placeholder("updated_at")}
         WHERE id = :id
         """,
         {"updated_at": stale, "id": operation.id},
@@ -470,3 +485,119 @@ async def test_maintenance_expires_abandoned_operations_and_scrubs_params():
     assert decrypt_json(expired.encrypted_params) == []
     still_connected = await get_connection(connection.id)
     assert still_connected and still_connected.status == "connected"
+
+
+@pytest.mark.asyncio
+async def test_restart_recovers_sent_approval_required_and_completed_operations():
+    transport, connection, remote_secret, _user_secret, _user_id = await bootstrap_bunker()
+
+    sent = await request_signer(connection, "ping", [])
+    sent_request = decrypt_request_event(transport.published[-1], remote_secret)
+
+    approval = await request_signer(connection, "ping", [])
+    approval_request = decrypt_request_event(transport.published[-1], remote_secret)
+    await handle_response_event(
+        make_response_event(
+            remote_secret,
+            connection.client_pubkey,
+            {
+                "id": approval_request["id"],
+                "result": "auth_url",
+                "error": "https://signer.example/approve",
+            },
+        )
+    )
+
+    complete = await request_signer(connection, "ping", [])
+    complete_request = decrypt_request_event(transport.published[-1], remote_secret)
+    complete_response = make_response_event(
+        remote_secret,
+        connection.client_pubkey,
+        {"id": complete_request["id"], "result": "pong"},
+    )
+    await handle_response_event(complete_response)
+
+    set_transport(None)
+    restarted_transport = FakeTransport()
+    set_transport(restarted_transport)
+    await refresh_runtime_state(force=True)
+
+    assert restarted_transport.relays == ["wss://signer-relay.example"]
+    assert connection.client_pubkey in next(iter(restarted_transport.subscriptions.values()))
+
+    await handle_response_event(
+        make_response_event(
+            remote_secret,
+            connection.client_pubkey,
+            {"id": sent_request["id"], "result": "pong"},
+        )
+    )
+    await handle_response_event(
+        make_response_event(
+            remote_secret,
+            connection.client_pubkey,
+            {"id": approval_request["id"], "result": "pong"},
+        )
+    )
+    await handle_response_event(complete_response)
+
+    recovered_sent = await get_operation(sent.id)
+    recovered_approval = await get_operation(approval.id)
+    unchanged_complete = await get_operation(complete.id)
+    assert recovered_sent and recovered_sent.status == "complete"
+    assert recovered_approval and recovered_approval.status == "complete"
+    assert unchanged_complete and unchanged_complete.status == "complete"
+    assert unchanged_complete.response_event_id == complete_response["id"]
+
+
+@pytest.mark.asyncio
+async def test_clock_controlled_expiry_and_retention_boundaries():
+    _transport, connection, _remote_secret, _user_secret, _user_id = await bootstrap_bunker()
+    clock = datetime.now(timezone.utc).replace(microsecond=0)
+
+    stale = await create_operation(
+        connection.id,
+        uuid4().hex,
+        "ping",
+        "user",
+        encrypt_json(["must be scrubbed"]),
+    )
+    terminal = await create_operation(
+        connection.id,
+        uuid4().hex,
+        "ping",
+        "user",
+        encrypt_json([]),
+    )
+    await db.execute(
+        f"""
+        UPDATE externalsigner.operations
+        SET status = 'sent', updated_at = {db.timestamp_placeholder("updated_at")}
+        WHERE id = :id
+        """,
+        {"updated_at": clock, "id": stale.id},
+    )
+    await db.execute(
+        f"""
+        UPDATE externalsigner.operations
+        SET status = 'complete', updated_at = {db.timestamp_placeholder("updated_at")}
+        WHERE id = :id
+        """,
+        {"updated_at": clock, "id": terminal.id},
+    )
+
+    await run_maintenance(force=True, now=clock + timedelta(minutes=29))
+    assert (await get_operation(stale.id)).status == "sent"  # type: ignore[union-attr]
+    assert await get_operation(terminal.id)
+
+    await run_maintenance(force=True, now=clock + timedelta(minutes=31))
+
+    expired = await get_operation(stale.id)
+    assert expired and expired.status == "failed"
+    assert decrypt_json(expired.encrypted_params) == []
+
+    await run_maintenance(force=True, now=clock + timedelta(days=7) - timedelta(seconds=1))
+    assert await get_operation(terminal.id)
+
+    await run_maintenance(force=True, now=clock + timedelta(days=7, seconds=1))
+    assert await get_operation(terminal.id) is None
