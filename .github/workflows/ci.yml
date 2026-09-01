@@ -79,3 +79,96 @@ jobs:
             httpx pytest pytest-asyncio websockets
       - name: PostgreSQL migration and test suite
         run: make test
+
+  nak-interop:
+    name: nak v0.20.6 interop
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Create test environment
+        run: |
+          python -m venv .venv
+          .venv/bin/python -m pip install --upgrade pip
+          .venv/bin/python -m pip install \
+            "lnbits @ git+https://github.com/lnbits/lnbits.git@v1.5.6" \
+            httpx pytest pytest-asyncio websockets
+      - name: Download the exact released signer
+        run: |
+          mkdir -p .interop
+          curl --fail --location --retry 5 \
+            --output .interop/nak-v0.20.6 \
+            https://github.com/fiatjaf/nak/releases/download/v0.20.6/nak-v0.20.6-linux-amd64
+          echo "b44b36c792fbc3fb73b7ba3bbc94beda2219826271aa8d5f130f569c3817c3b9  .interop/nak-v0.20.6" \
+            | sha256sum --check --strict
+          chmod 0755 .interop/nak-v0.20.6
+          .interop/nak-v0.20.6 --version
+      - name: Released signer invitation, QR, restart and relay recovery
+        env:
+          DEBUG: "true"
+          NAK_PATH: .interop/nak-v0.20.6
+          PYTHONPATH: ..
+        run: .venv/bin/python -m pytest -vv tests/test_interop_nak.py
+
+  browser-accessibility:
+    name: browser accessibility
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "20"
+          package-manager-cache: false
+      - name: Create browser host
+        run: |
+          python -m venv .venv
+          .venv/bin/python -m pip install --upgrade pip
+          .venv/bin/python -m pip install \
+            "lnbits @ git+https://github.com/lnbits/lnbits.git@v1.5.6"
+          npm install --no-save --no-package-lock --no-audit --no-fund \
+            axe-core@4.10.3 puppeteer-core@24.16.0
+          mkdir -p .browser-host/extensions .browser-data
+          ln -s "$GITHUB_WORKSPACE" .browser-host/extensions/externalsigner
+      - name: Start LNbits and provision a temporary account
+        run: |
+          site_packages=$(.venv/bin/python -c \
+            'import site; print(site.getsitepackages()[0])')
+          (
+            cd "$site_packages"
+            DEBUG=true \
+              LNBITS_DATA_FOLDER="$GITHUB_WORKSPACE/.browser-data" \
+              LNBITS_EXTENSIONS_PATH="$GITHUB_WORKSPACE/.browser-host" \
+              "$GITHUB_WORKSPACE/.venv/bin/lnbits" \
+              --host 127.0.0.1 --port 5011
+          ) > .browser-lnbits.log 2>&1 &
+          echo "$!" > .browser-server-pid
+          for attempt in $(seq 1 60); do
+            if curl --silent --fail http://127.0.0.1:5011/first_install \
+              > /dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          browser_password=$(openssl rand -hex 16)
+          curl --silent --show-error --fail \
+            --cookie-jar .browser-cookies \
+            --request PUT \
+            --header 'Content-Type: application/json' \
+            --data "{\"username\":\"accessibility\",\"password\":\"${browser_password}\",\"password_repeat\":\"${browser_password}\"}" \
+            http://127.0.0.1:5011/api/v1/auth/first_install > /dev/null
+          curl --silent --show-error --fail \
+            --cookie .browser-cookies \
+            --request PUT \
+            http://127.0.0.1:5011/api/v1/extension/externalsigner/enable \
+            > /dev/null
+      - name: Axe, keyboard, mobile and large-text acceptance
+        env:
+          BROWSER_BASE_URL: http://127.0.0.1:5011
+          BROWSER_COOKIE_JAR: .browser-cookies
+          CHROME_PATH: /usr/bin/google-chrome
+        run: node scripts/browser_acceptance.cjs

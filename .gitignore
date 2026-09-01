@@ -1,4 +1,6 @@
 .DS_Store
+.browser-*
+.interop/
 .coverage
 .mypy_cache/
 .pytest_cache/

@@ -4,6 +4,7 @@ import json
 import queue
 import socket
 import threading
+from datetime import timedelta
 from typing import Any, Protocol, cast
 from urllib.parse import urlsplit
 
@@ -11,9 +12,11 @@ from lnbits.settings import settings
 from nostr_sdk import (
     Client,
     ClientMessage,
+    Filter,
     HandleNotification,
     RelayMessage,
     RelayUrl,
+    SubscribeOptions,
     uniffi_set_event_loop,
 )
 
@@ -51,9 +54,9 @@ class _NotificationHandler(HandleNotification):
 class NostrSdkTransport:
     """An isolated, target-aware NIP-46 relay session.
 
-    LNbits already ships ``nostr-sdk``. Using its public ``send_msg_to`` API
-    keeps requests on only the relays selected for a connection and avoids
-    depending on private methods from another extension.
+    LNbits already ships ``nostr-sdk``. Using its public per-relay subscription
+    and ``send_msg_to`` APIs keeps traffic on only the relays selected for a
+    connection and avoids depending on private methods from another extension.
     """
 
     MAX_QUEUED_EVENTS = 4096
@@ -77,31 +80,18 @@ class NostrSdkTransport:
     def reconcile(self, routes: dict[str, list[str]], subscription_id: str) -> None:
         self._ensure_open()
         normalized = {relay: sorted(set(pubkeys)) for relay, pubkeys in routes.items() if pubkeys}
-        changed = {
-            relay
-            for relay in set(normalized) | set(self._routes)
-            if normalized.get(relay) != self._routes.get(relay)
-        }
 
-        for relay in sorted(set(normalized) - set(self._routes)):
+        new_relays = set(normalized) - set(self._routes)
+        for relay in sorted(normalized):
             validate_relay_network_target(relay)
-            self._run(self._add_relay(relay))
-
-        for relay in sorted(changed & set(self._routes)):
-            close = ClientMessage.from_json(json.dumps(["CLOSE", subscription_id]))
-            self._send_to([relay], close)
-
-        for relay in sorted(changed & set(normalized)):
-            request = ClientMessage.from_json(
-                json.dumps(
-                    [
-                        "REQ",
-                        subscription_id,
-                        {"kinds": [24133], "#p": normalized[relay], "limit": 0},
-                    ]
+            self._run(
+                self._subscribe_relay(
+                    relay,
+                    normalized[relay],
+                    subscription_id,
+                    add=relay in new_relays,
                 )
             )
-            self._send_to([relay], request)
 
         for relay in sorted(set(self._routes) - set(normalized)):
             self._run(self._client.force_remove_relay(RelayUrl.parse(relay)))
@@ -169,10 +159,31 @@ class NostrSdkTransport:
             self._loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
         self._loop.close()
 
-    async def _add_relay(self, relay: str) -> None:
+    async def _subscribe_relay(
+        self,
+        relay: str,
+        pubkeys: list[str],
+        subscription_id: str,
+        *,
+        add: bool,
+    ) -> None:
         relay_url = RelayUrl.parse(relay)
-        await self._client.add_relay(relay_url)
-        await self._client.connect_relay(relay_url)
+        if add:
+            await self._client.add_relay(relay_url)
+        relay_connection = await self._client.relay(relay_url)
+        if not relay_connection.is_connected():
+            # Do not wait for an SDK backoff after the endpoint is healthy again.
+            # Moving the relay to TERMINATED lets try_connect make one bounded,
+            # synchronous attempt before the subscription is installed.
+            if not add:
+                relay_connection.disconnect()
+            await relay_connection.try_connect(timedelta(seconds=5))
+        relay_filter = Filter.from_json(json.dumps({"kinds": [24133], "#p": pubkeys, "limit": 0}))
+        await relay_connection.subscribe_with_id(
+            subscription_id,
+            relay_filter,
+            SubscribeOptions(),
+        )
 
     def _send_to(self, relays: list[str], message: ClientMessage) -> None:
         relay_urls = [RelayUrl.parse(relay) for relay in relays]

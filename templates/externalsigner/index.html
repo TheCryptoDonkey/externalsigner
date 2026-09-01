@@ -72,7 +72,13 @@
         encrypted client capability, not your identity key.
       </q-banner>
       <div class="row q-gutter-sm justify-end">
-        <q-btn flat v-close-popup no-caps label="Cancel"></q-btn>
+        <q-btn
+          flat
+          v-close-popup
+          no-caps
+          class="externalsigner-cancel-action"
+          label="Cancel"
+        ></q-btn>
         <q-btn
           unelevated
           no-caps
@@ -154,7 +160,13 @@
         intend to connect and approve the exact permissions shown there.
       </q-banner>
       <div class="row q-gutter-sm justify-end">
-        <q-btn flat v-close-popup no-caps label="Cancel"></q-btn>
+        <q-btn
+          flat
+          v-close-popup
+          no-caps
+          class="externalsigner-cancel-action"
+          label="Cancel"
+        ></q-btn>
         <q-btn
           unelevated
           no-caps
@@ -203,6 +215,7 @@
               outline
               no-caps
               color="primary"
+              class="externalsigner-secondary-action"
               icon="qr_code_scanner"
               label="My signer scans QR codes"
               @click="showQrDialog"
@@ -220,7 +233,7 @@
     </div>
   </q-card>
 
-  <q-banner rounded class="bg-orange-1 text-orange-10">
+  <q-banner rounded class="bg-orange-1 externalsigner-key-warning">
     <template v-slot:avatar>
       <q-icon name="warning_amber" color="orange-9"></q-icon>
     </template>
