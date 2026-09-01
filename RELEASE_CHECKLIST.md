@@ -37,7 +37,7 @@ Independent-signer and signer-side revocation work is tracked by
 - [x] Kind-scoped permission and malicious-response tests pass.
 - [x] Independent `nostr_bunker` interoperability passes locally.
 - [x] Heartwood daemon and soft-signer interoperability passes locally.
-- [ ] A second independently maintained signer is tested from its released build.
+- [x] A second independently maintained signer is tested from its released build.
 - [ ] Clean install through the real LNbits extension manager passes.
 - [ ] Upgrade from the previous released schema passes, when applicable.
 - [ ] Revoke in LNbits and signer-side client removal both pass.
@@ -58,7 +58,9 @@ Staging, network-recovery and rollback work is tracked by
 
 - [ ] Single-worker staging soak passes for at least seven days.
 - [x] Multi-worker behaviour is explicitly unsupported in release notes.
-- [ ] Relay outage, DNS failure, TLS failure and recovery are exercised.
+- [x] Relay stop/restart recovery is exercised with the real extension transport
+      and released `nak` signer.
+- [ ] DNS failure, TLS failure and recovery are exercised in staging.
 - [x] Runtime exception logs omit exception data; staging monitoring review remains
       part of the seven-day soak.
 - [ ] Rollback procedure is rehearsed against the release archive and backup.
@@ -73,6 +75,8 @@ First-user and accessibility acceptance is tracked by
 - [ ] The user can explain why an `nsec` must never be pasted into LNbits.
 - [ ] The user understands the requested permission preset before approval.
 - [ ] Error, expiry, retry, test and revoke journeys pass on desktop and mobile.
+- [x] Automated WCAG 2 A/AA, keyboard-opened route, contrast, mobile layout and
+      200% text-reflow checks pass in light and dark themes.
 - [ ] Keyboard navigation, labels, contrast and screen-reader announcements pass.
 - [x] Gallery images are generated/captured from the final release source and contain no secrets.
 

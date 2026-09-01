@@ -11,7 +11,7 @@ local test run into a public release.
 The ordinary suite passed on Python 3.12 and LNbits 1.5.6:
 
 ```text
-38 passed, 2 skipped
+39 passed, 3 skipped
 Ruff: passed
 Black: passed
 mypy: passed
@@ -19,10 +19,11 @@ Prettier: passed
 pip check: passed
 ```
 
-The two skips are the deliberately opt-in independent-signer modules. Both
-were run separately and passed as recorded below.
+The three skips are the deliberately opt-in independent-signer and hardware
+modules. The software signer modules were run separately and passed as
+recorded below; the physical-device boundary remains open.
 
-The same final-source ordinary suite also passed `38 passed, 2 skipped` on
+The same final-source ordinary suite also passed `39 passed, 3 skipped` on
 LNbits 1.6.0rc4 commit `a16dd7cee3b89785c69f08f41462e7a2cecb62d3`.
 
 Public `main` CI run
@@ -36,7 +37,8 @@ ordinary suite on both LNbits lines. All eight jobs are required by protected
 The ordinary suite includes a real in-process WebSocket relay test for the
 public `nostr-sdk` transport. It proves per-relay subscription filters,
 delivery of a signed kind-24133 response and targeted publication that does not
-reach an excluded relay.
+reach an excluded relay. A second transport test stops and restarts the same
+relay endpoint and proves the unchanged subscription is restored.
 
 ## Real LNbits browser smoke
 
@@ -46,6 +48,16 @@ Chrome exercised both onboarding dialogs and the 390 px and 1440 px layouts.
 The final empty and QR-state captures produced no failed HTTP response,
 uncaught browser error or missing asset. The QR capture uses an explicitly fake
 published fixture; it contains no live pairing capability.
+
+Public pull-request CI run
+[`33534316219`](https://github.com/TheCryptoDonkey/externalsigner/actions/runs/33534316219)
+also mounted the exact candidate in a fresh LNbits 1.5.6 process and ran Chrome
+with Axe 4.10.3. The light and dark desktop page, bunker dialog, 390 px mobile
+page and QR dialog produced no WCAG 2 A/AA violation or browser error. Both
+route buttons opened from keyboard activation. At 200% root text size, the
+extension retained both route choices and had no horizontal overflow. This
+automated result supports, but does not replace, keyboard-only and
+screen-reader acceptance by people.
 
 This proves a source-mounted development installation. It does not prove an
 extension-manager archive install or an upgrade from a previous public
@@ -74,6 +86,30 @@ The test crosses the two protocol implementations for:
 The signer implementation is independent, while the relay transport is mocked
 in this test so protocol behaviour can be isolated. The ordinary transport
 test and Heartwood flow separately exercise the real relay transport.
+
+## Released `nak` signer
+
+Public pull-request CI run
+[`33534316219`](https://github.com/TheCryptoDonkey/externalsigner/actions/runs/33534316219)
+downloaded the upstream `nak` v0.20.6 Linux release, verified SHA-256
+`b44b36c792fbc3fb73b7ba3bbc94beda2219826271aa8d5f130f569c3817c3b9`
+before execution and printed `nak version v0.20.6`. Both released-signer tests
+passed over a real temporary WebSocket relay.
+
+The bunker-invite route proved connection, kind-0 signing, signer restart,
+relay stop/restart recovery, a second verified signature and erasure of the
+local encrypted client capability on revoke. The client-initiated
+`nostrconnect://` route proved that the released signer accepted the QR
+capability and completed another verified kind-0 signature.
+
+This run found a transport defect before publication: an unchanged local route
+did not restore its relay subscription after the relay lost server-side state.
+The transport now uses the public `nostr-sdk` per-relay subscription API and a
+bounded reconnect attempt. The ordinary suite carries the restart regression.
+
+Local capability erasure is proved. `nak` logout does not provide evidence that
+its persisted authorised-client entry was removed, so signer-side client
+removal remains an explicit human acceptance gate.
 
 ## Heartwood
 
@@ -133,7 +169,7 @@ reproduced both results from the merged source. Production remains blocked by
 
 A fresh `postgres:16-alpine` database ran the real LNbits 1.5.6 core migration
 entry point followed by External Signer migrations 1 and 2. The complete
-ordinary suite then passed `35 passed, 2 skipped` on PostgreSQL.
+ordinary suite then passed `39 passed, 3 skipped` on PostgreSQL.
 
 This run found and fixed a backend-specific defect: direct timestamp parameters
 must use LNbits' database-aware timestamp placeholder. The claim, rate-limit,
