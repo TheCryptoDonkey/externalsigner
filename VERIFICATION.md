@@ -49,6 +49,13 @@ This proves a source-mounted development installation. It does not prove an
 extension-manager archive install or an upgrade from a previous public
 release.
 
+An exact Git archive of the pre-release commit was also passed through LNbits
+1.5.6's `InstallableExtension.extract_archive()` path in isolated data and
+extension directories. LNbits accepted the top-level archive layout, copied the
+extension, found `config.json` and read version 0.1.0. This proves archive
+structure and extraction only. The real manager download, release hash and
+registry path remain blocked until a release exists.
+
 ## Independent signer
 
 `tests/test_interop_lnbits_nostr_bunker.py` passed against upstream LNbits
