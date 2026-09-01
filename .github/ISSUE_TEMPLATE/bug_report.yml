@@ -1,0 +1,56 @@
+name: Bug report
+description: Report a reproducible External Signer defect without exposing secrets.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: checkboxes
+    attributes:
+      label: Secret-safety check
+      options:
+        - label: I removed all nsecs, pairing links, client secrets, account IDs, private relay URLs and production data.
+          required: true
+        - label: I checked the current QUICKSTART.md troubleshooting guidance.
+          required: true
+  - type: input
+    attributes:
+      label: External Signer version or commit
+      placeholder: v0.1.0 or a full commit hash
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: LNbits version
+      placeholder: v1.5.6
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Remote signer
+      description: Name and released version. Do not include keys or pairing data.
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: Pairing route
+      options:
+        - bunker invite
+        - signer scans QR
+        - already connected operation
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: What happened?
+      description: Include the visible status and a minimal sequence that reproduces the problem.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Sanitised logs or screenshots
+      description: Optional. Check every attachment again for secrets before submitting.

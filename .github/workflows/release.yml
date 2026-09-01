@@ -1,0 +1,75 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Confirm tag and metadata agree
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import re
+          import tomllib
+
+          tag = os.environ["RELEASE_TAG"]
+          if not re.fullmatch(r"v[0-9]+\.[0-9]+\.[0-9]+", tag):
+              raise SystemExit(f"release tag is not strict semantic versioning: {tag}")
+          expected = tag.removeprefix("v")
+          with open("config.json", encoding="utf-8") as file:
+              config_version = json.load(file)["version"]
+          with open("pyproject.toml", "rb") as file:
+              package_version = tomllib.load(file)["project"]["version"]
+          if expected != config_version or expected != package_version:
+              raise SystemExit(
+                  f"tag {expected}, config {config_version} and package {package_version} differ"
+              )
+          with open("CHANGELOG.md", encoding="utf-8") as file:
+              matching_header = next(
+                  (line for line in file if line.startswith(f"## {expected} - ")),
+                  None,
+              )
+          if not matching_header or "Unreleased" in matching_header:
+              raise SystemExit(f"CHANGELOG.md has no dated {expected} release heading")
+          PY
+      - name: Audit the stable LNbits runtime
+        run: |
+          python -m venv .audit-venv
+          .audit-venv/bin/python -m pip install --upgrade pip pip-audit
+          .audit-venv/bin/python -m pip install \
+            "lnbits @ git+https://github.com/lnbits/lnbits.git@v1.5.6"
+          .audit-venv/bin/python -m pip_audit --strict
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" --draft --verify-tag --generate-notes
+          fi
+      - name: Attach exact source archive and SHA-256
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          archive="externalsigner-${RELEASE_TAG}.zip"
+          gh api "/repos/${GITHUB_REPOSITORY}/zipball/${RELEASE_TAG}" > "$archive"
+          sha256sum "$archive" > "${archive}.sha256"
+          gh release upload --clobber "$RELEASE_TAG" "$archive" "${archive}.sha256"
+          gh release edit "$RELEASE_TAG" --draft=false

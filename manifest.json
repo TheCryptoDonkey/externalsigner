@@ -1,0 +1,9 @@
+{
+  "repos": [
+    {
+      "id": "externalsigner",
+      "organisation": "TheCryptoDonkey",
+      "repository": "externalsigner"
+    }
+  ]
+}

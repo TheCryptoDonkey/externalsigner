@@ -1,0 +1,18 @@
+External Signer
+Copyright (c) 2026 The Crypto Donkey
+
+This extension runs inside LNbits and uses the Nostr SDK distributed with
+LNbits. Those projects remain governed by their own licences and copyright
+notices:
+
+- LNbits: https://github.com/lnbits/lnbits
+- rust-nostr / nostr-sdk: https://github.com/rust-nostr/nostr
+
+Interoperability tests exercise the separate LNbits nostr_bunker project. No
+nostr_bunker source code is bundled with this extension.
+
+The Nostr Implementation Possibilities (NIPs) are protocol specifications, not
+part of this software distribution:
+
+- NIP-44: https://github.com/nostr-protocol/nips/blob/master/44.md
+- NIP-46: https://github.com/nostr-protocol/nips/blob/master/46.md

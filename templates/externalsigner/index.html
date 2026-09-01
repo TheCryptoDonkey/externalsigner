@@ -1,0 +1,735 @@
+{% extends "base.html" %} {% from "macros.jinja" import window_vars with context
+%} {% block scripts %} {{ window_vars(user) }}
+<link
+  rel="stylesheet"
+  href="{{ static_url_for('externalsigner/static', path='index.css') }}"
+/>
+<script src="{{ static_url_for('externalsigner/static', path='index.js') }}"></script>
+{% endblock %} {% block page %}
+<q-dialog v-model="bunkerDialog.show" position="top">
+  <q-card class="q-pa-lg q-pt-xl lnbits__dialog-card externalsigner-dialog">
+    <q-form @submit="createBunkerConnection" class="q-gutter-md">
+      <div>
+        <div class="text-h6">Use a signer invite</div>
+        <p class="text-grey-7 q-mb-none">
+          In your signer, create or copy its <code>bunker://</code> connection
+          link. Paste that link here. Never paste an <code>nsec</code>.
+        </p>
+      </div>
+      <q-input
+        filled
+        v-model.trim="bunkerDialog.name"
+        label="A name you will recognise *"
+        hint="For example: Shop signer or Personal Amber"
+        maxlength="120"
+        autocomplete="off"
+        :rules="[(value) => Boolean(value && value.trim()) || 'Give this connection a name']"
+      ></q-input>
+      <q-input
+        filled
+        autogrow
+        v-model.trim="bunkerDialog.uri"
+        label="bunker:// invite *"
+        type="textarea"
+        autocomplete="off"
+        autocapitalize="off"
+        spellcheck="false"
+        :rules="[(value) => Boolean(value && value.startsWith('bunker://')) || 'Paste the complete bunker:// link from your signer']"
+      ></q-input>
+      <q-select
+        filled
+        emit-value
+        map-options
+        v-model="bunkerDialog.preset"
+        :options="presetOptions"
+        label="What may LNbits ask this signer to do?"
+        @update:model-value="applyBunkerPreset"
+      ></q-select>
+      <div
+        class="text-caption text-grey-7 q-mt-xs"
+        v-text="presetDescription(bunkerDialog.preset)"
+      ></div>
+      <q-expansion-item
+        dense
+        icon="tune"
+        label="Advanced: exact NIP-46 permissions"
+        header-class="text-grey-8"
+      >
+        <q-input
+          filled
+          autogrow
+          v-model="bunkerDialog.permissions"
+          label="Requested permissions, comma separated"
+          hint="Broad sign_event is refused. Every event kind must be explicit."
+          autocomplete="off"
+          autocapitalize="off"
+          spellcheck="false"
+        ></q-input>
+      </q-expansion-item>
+      <q-banner rounded class="bg-blue-grey-1 text-blue-grey-10">
+        After you press <strong>Send invite</strong>, open the signer and
+        approve the connection and identity-proof request. LNbits stores a new
+        encrypted client capability, not your identity key.
+      </q-banner>
+      <div class="row q-gutter-sm justify-end">
+        <q-btn flat v-close-popup no-caps label="Cancel"></q-btn>
+        <q-btn
+          unelevated
+          no-caps
+          color="primary"
+          type="submit"
+          icon-right="arrow_forward"
+          label="Send invite"
+          :loading="bunkerDialog.loading"
+          :disable="!bunkerDialog.name || !bunkerDialog.uri"
+        ></q-btn>
+      </div>
+    </q-form>
+  </q-card>
+</q-dialog>
+
+<q-dialog v-model="qrDialog.show" position="top">
+  <q-card class="q-pa-lg q-pt-xl lnbits__dialog-card externalsigner-dialog">
+    <q-form @submit="createNostrConnectConnection" class="q-gutter-md">
+      <div>
+        <div class="text-h6">Create a pairing QR</div>
+        <p class="text-grey-7 q-mb-none">
+          Use this when your signer has a <strong>Scan client QR</strong> or
+          <strong>Connect app</strong> option.
+        </p>
+      </div>
+      <q-input
+        filled
+        v-model.trim="qrDialog.name"
+        label="A name you will recognise *"
+        hint="For example: Shop signer or Personal Amber"
+        maxlength="120"
+        autocomplete="off"
+        :rules="[(value) => Boolean(value && value.trim()) || 'Give this connection a name']"
+      ></q-input>
+      <q-select
+        filled
+        emit-value
+        map-options
+        v-model="qrDialog.preset"
+        :options="presetOptions"
+        label="What may LNbits ask this signer to do?"
+        @update:model-value="applyQrPreset"
+      ></q-select>
+      <div
+        class="text-caption text-grey-7 q-mt-xs"
+        v-text="presetDescription(qrDialog.preset)"
+      ></div>
+      <q-expansion-item
+        dense
+        icon="tune"
+        label="Advanced: relays and exact permissions"
+        header-class="text-grey-8"
+      >
+        <div class="q-gutter-md q-pt-sm">
+          <q-input
+            filled
+            autogrow
+            v-model="qrDialog.relays"
+            label="Pairing relays, one per line"
+            hint="The signer may replace these with its preferred relays after pairing."
+            autocomplete="off"
+            autocapitalize="off"
+            spellcheck="false"
+          ></q-input>
+          <q-input
+            filled
+            autogrow
+            v-model="qrDialog.permissions"
+            label="Requested permissions, comma separated"
+            hint="Broad sign_event is refused. Every event kind must be explicit."
+            autocomplete="off"
+            autocapitalize="off"
+            spellcheck="false"
+          ></q-input>
+        </div>
+      </q-expansion-item>
+      <q-banner rounded class="bg-amber-1 text-amber-10">
+        The QR is a ten-minute pairing secret. Scan it only with the signer you
+        intend to connect and approve the exact permissions shown there.
+      </q-banner>
+      <div class="row q-gutter-sm justify-end">
+        <q-btn flat v-close-popup no-caps label="Cancel"></q-btn>
+        <q-btn
+          unelevated
+          no-caps
+          color="primary"
+          type="submit"
+          icon-right="arrow_forward"
+          label="Create QR"
+          :loading="qrDialog.loading"
+          :disable="!qrDialog.name || !qrDialog.relays"
+        ></q-btn>
+      </div>
+    </q-form>
+  </q-card>
+</q-dialog>
+
+<div class="q-gutter-y-md externalsigner-page">
+  <q-card class="externalsigner-hero">
+    <div class="row items-stretch">
+      <q-card-section class="col-12 col-md-6 q-pa-lg q-pa-md-xl">
+        <q-badge
+          outline
+          color="primary"
+          label="NIP-46 remote signing"
+        ></q-badge>
+        <h1 class="text-h4 q-my-md">
+          Sign from LNbits. Keep your key elsewhere.
+        </h1>
+        <p class="text-body1 text-grey-8">
+          External Signer connects this LNbits account to a separate Nostr
+          signer. LNbits can request only the methods and event kinds you
+          approve. Your identity <code>nsec</code> never belongs here.
+        </p>
+        <div class="row q-col-gutter-sm q-mt-lg externalsigner-actions">
+          <div class="col-12 col-sm-auto">
+            <q-btn
+              unelevated
+              no-caps
+              color="primary"
+              icon="link"
+              label="I have a signer invite"
+              @click="showBunkerDialog"
+            ></q-btn>
+          </div>
+          <div class="col-12 col-sm-auto">
+            <q-btn
+              outline
+              no-caps
+              color="primary"
+              icon="qr_code_scanner"
+              label="My signer scans QR codes"
+              @click="showQrDialog"
+            ></q-btn>
+          </div>
+        </div>
+      </q-card-section>
+      <div class="col-12 col-md-6 bg-dark">
+        <img
+          class="externalsigner-hero__image"
+          src="{{ static_url_for('externalsigner/static', path='images/external-signer-custody.webp') }}"
+          alt="An LNbits application sends an encrypted request through relays to a separate locked signer where the identity key remains"
+        />
+      </div>
+    </div>
+  </q-card>
+
+  <q-banner rounded class="bg-orange-1 text-orange-10">
+    <template v-slot:avatar>
+      <q-icon name="warning_amber" color="orange-9"></q-icon>
+    </template>
+    <strong>Never paste an nsec into this extension.</strong> You need either a
+    <code>bunker://</code> invite from the signer or a signer that can scan a
+    <code>nostrconnect://</code> QR.
+  </q-banner>
+
+  <div v-if="!loading && !activeConnections.length" class="row q-col-gutter-md">
+    <div class="col-12 col-md-6">
+      <q-card flat bordered class="externalsigner-choice">
+        <q-card-section>
+          <div class="row items-center q-gutter-sm q-mb-md">
+            <q-icon name="link" color="primary" size="32px"></q-icon>
+            <div>
+              <div class="text-h6">Your signer gives you a link</div>
+              <div class="text-caption text-grey-7">
+                The simplest route when available
+              </div>
+            </div>
+          </div>
+          <div class="q-gutter-y-md">
+            <div class="externalsigner-step">
+              <span class="externalsigner-step__number">1</span>
+              <div>Open the signer and create a connection for LNbits.</div>
+            </div>
+            <div class="externalsigner-step">
+              <span class="externalsigner-step__number">2</span>
+              <div>
+                Copy the complete link beginning <code>bunker://</code>.
+              </div>
+            </div>
+            <div class="externalsigner-step">
+              <span class="externalsigner-step__number">3</span>
+              <div>Paste it here, then approve the requests in the signer.</div>
+            </div>
+          </div>
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn
+            unelevated
+            no-caps
+            color="primary"
+            label="Use a bunker invite"
+            @click="showBunkerDialog"
+          ></q-btn>
+        </q-card-actions>
+      </q-card>
+    </div>
+    <div class="col-12 col-md-6">
+      <q-card flat bordered class="externalsigner-choice">
+        <q-card-section>
+          <div class="row items-center q-gutter-sm q-mb-md">
+            <q-icon name="qr_code_scanner" color="primary" size="32px"></q-icon>
+            <div>
+              <div class="text-h6">Your signer scans a QR</div>
+              <div class="text-caption text-grey-7">
+                Use your signer's Connect app option
+              </div>
+            </div>
+          </div>
+          <div class="q-gutter-y-md">
+            <div class="externalsigner-step">
+              <span class="externalsigner-step__number">1</span>
+              <div>Create a short-lived pairing QR in LNbits.</div>
+            </div>
+            <div class="externalsigner-step">
+              <span class="externalsigner-step__number">2</span>
+              <div>Open the signer and choose its scan or connect option.</div>
+            </div>
+            <div class="externalsigner-step">
+              <span class="externalsigner-step__number">3</span>
+              <div>
+                Scan, check the permissions and approve the identity proof.
+              </div>
+            </div>
+          </div>
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn
+            unelevated
+            no-caps
+            color="primary"
+            label="Create a pairing QR"
+            @click="showQrDialog"
+          ></q-btn>
+        </q-card-actions>
+      </q-card>
+    </div>
+  </div>
+
+  <div class="row q-col-gutter-md">
+    <div class="col-12 col-lg-8">
+      <q-card>
+        <q-card-section class="row items-center q-col-gutter-md">
+          <div class="col">
+            <div class="text-h5">Your signer connections</div>
+            <div class="text-subtitle2 text-grey-7 q-mt-xs">
+              Connected means the signer answered and proved the user public
+              key.
+            </div>
+          </div>
+          <div v-if="activeConnections.length" class="col-auto row q-gutter-sm">
+            <q-btn
+              flat
+              no-caps
+              color="primary"
+              icon="qr_code_scanner"
+              label="Create QR"
+              @click="showQrDialog"
+            ></q-btn>
+            <q-btn
+              unelevated
+              no-caps
+              color="primary"
+              icon="link"
+              label="Use invite"
+              @click="showBunkerDialog"
+            ></q-btn>
+          </div>
+        </q-card-section>
+        <q-separator></q-separator>
+
+        <q-card-section>
+          <div v-if="loading" class="row justify-center q-pa-xl" role="status">
+            <q-spinner color="primary" size="42px"></q-spinner>
+            <span class="sr-only">Loading signer connections</span>
+          </div>
+          <div
+            v-else-if="!connections.length"
+            class="text-center q-pa-xl text-grey-7"
+          >
+            <q-icon name="key_off" size="48px" class="q-mb-md"></q-icon>
+            <div class="text-h6">No signer connected yet</div>
+            <p class="q-mb-none">
+              Choose one of the two routes above to begin.
+            </p>
+          </div>
+
+          <q-list v-else separator>
+            <q-expansion-item
+              v-for="connection in activeConnections"
+              :key="connection.id"
+              expand-separator
+              :icon="statusIcon(connection.status)"
+              :default-opened="connection.status !== 'connected'"
+            >
+              <template v-slot:header>
+                <q-item-section avatar>
+                  <q-icon
+                    :name="statusIcon(connection.status)"
+                    :color="statusColor(connection.status)"
+                  ></q-icon>
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label v-text="connection.name"></q-item-label>
+                  <q-item-label
+                    caption
+                    v-text="statusHelp(connection)"
+                  ></q-item-label>
+                </q-item-section>
+                <q-item-section side>
+                  <q-badge
+                    :color="statusColor(connection.status)"
+                    v-text="statusLabel(connection.status)"
+                  ></q-badge>
+                </q-item-section>
+              </template>
+
+              <q-card flat bordered class="q-ma-md">
+                <q-card-section
+                  v-if="connection.pairing_uri"
+                  class="text-center"
+                >
+                  <q-banner
+                    rounded
+                    class="bg-amber-1 text-amber-10 text-left q-mb-lg"
+                  >
+                    <strong>Pairing secret:</strong> scan this only with the
+                    signer you intend to connect. It cannot be restored after
+                    expiry.
+                  </q-banner>
+                  <div class="text-h6 q-mb-xs">Open your signer and scan</div>
+                  <div class="text-grey-7 q-mb-md">
+                    Choose Connect app or Scan client QR, then check and approve
+                    the requested permissions.
+                  </div>
+                  <lnbits-qrcode
+                    :value="connection.pairing_uri"
+                    :options="{width: 280, margin: 2}"
+                  ></lnbits-qrcode>
+                  <div class="q-mt-md">
+                    <q-btn
+                      outline
+                      no-caps
+                      color="primary"
+                      icon="content_copy"
+                      label="Copy pairing link instead"
+                      @click="copy(connection.pairing_uri, 'Pairing link copied')"
+                    ></q-btn>
+                  </div>
+                  <div class="text-body2 q-mt-md" aria-live="polite">
+                    Expires in
+                    <strong v-text="pairingTimeRemaining(connection)"></strong>
+                  </div>
+                </q-card-section>
+
+                <q-card-section class="q-gutter-md">
+                  <q-banner
+                    rounded
+                    :class="statusBannerClass(connection.status)"
+                    aria-live="polite"
+                  >
+                    <template v-slot:avatar>
+                      <q-icon
+                        :name="statusIcon(connection.status)"
+                        :color="statusColor(connection.status)"
+                      ></q-icon>
+                    </template>
+                    <div
+                      class="text-weight-bold"
+                      v-text="statusLabel(connection.status)"
+                    ></div>
+                    <div
+                      class="text-body2"
+                      v-text="statusHelp(connection)"
+                    ></div>
+                  </q-banner>
+
+                  <q-banner
+                    v-if="connection.last_error"
+                    rounded
+                    class="bg-red-1 text-red-10"
+                  >
+                    <strong>What went wrong:</strong>
+                    <span v-text="connection.last_error"></span>
+                  </q-banner>
+
+                  <div
+                    v-if="connection.status === 'connected'"
+                    class="row q-col-gutter-md"
+                  >
+                    <div class="col-12 col-sm-6">
+                      <div class="text-caption text-grey-7">
+                        Verified user public key
+                      </div>
+                      <div
+                        class="text-body2 externalsigner-key"
+                        v-text="shortKey(connection.user_pubkey)"
+                      ></div>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                      <div class="text-caption text-grey-7">
+                        Identity proved
+                      </div>
+                      <div
+                        class="text-body2"
+                        v-text="formatDate(connection.proof_verified_at)"
+                      ></div>
+                    </div>
+                  </div>
+
+                  <q-expansion-item
+                    dense
+                    icon="manage_search"
+                    label="Technical connection details"
+                    header-class="text-grey-8"
+                  >
+                    <div class="q-pa-md q-gutter-md bg-blue-grey-1">
+                      <div>
+                        <div class="text-caption text-grey-7">
+                          Connection route
+                        </div>
+                        <span v-text="modeLabel(connection.mode)"></span>
+                      </div>
+                      <div>
+                        <div class="text-caption text-grey-7">
+                          User public key
+                        </div>
+                        <code
+                          class="externalsigner-key"
+                          v-text="connection.user_pubkey || 'Not proved yet'"
+                        ></code>
+                      </div>
+                      <div>
+                        <div class="text-caption text-grey-7">
+                          Remote signer key
+                        </div>
+                        <code
+                          class="externalsigner-key"
+                          v-text="connection.remote_signer_pubkey || 'Waiting for signer'"
+                        ></code>
+                      </div>
+                      <div>
+                        <div class="text-caption text-grey-7">
+                          Disposable LNbits client key
+                        </div>
+                        <code
+                          class="externalsigner-key"
+                          v-text="connection.client_pubkey"
+                        ></code>
+                      </div>
+                      <div>
+                        <div class="text-caption text-grey-7">Relays</div>
+                        <div v-for="relay in connection.relays" :key="relay">
+                          <code
+                            class="externalsigner-key"
+                            v-text="relay"
+                          ></code>
+                        </div>
+                      </div>
+                      <div>
+                        <div class="text-caption text-grey-7 q-mb-xs">
+                          Approved scope
+                        </div>
+                        <q-chip
+                          v-for="permission in connection.permissions"
+                          :key="permission"
+                          dense
+                          square
+                          color="white"
+                          text-color="blue-grey-10"
+                          v-text="permission"
+                        ></q-chip>
+                      </div>
+                    </div>
+                  </q-expansion-item>
+                </q-card-section>
+
+                <q-card-actions align="right" class="q-gutter-sm">
+                  <q-btn
+                    flat
+                    no-caps
+                    color="primary"
+                    icon="refresh"
+                    label="Create fresh pairing"
+                    v-if="connection.status === 'error' && connection.mode === 'nostrconnect' && !connection.remote_signer_pubkey"
+                    @click="retry(connection)"
+                  ></q-btn>
+                  <q-btn
+                    flat
+                    no-caps
+                    color="primary"
+                    icon="refresh"
+                    label="Retry connection"
+                    v-else-if="connection.status === 'error'"
+                    @click="retry(connection)"
+                  ></q-btn>
+                  <q-btn
+                    flat
+                    no-caps
+                    icon="wifi_tethering"
+                    label="Test connection"
+                    v-if="connection.status === 'connected'"
+                    @click="ping(connection)"
+                  ></q-btn>
+                  <q-btn
+                    flat
+                    no-caps
+                    color="negative"
+                    icon="link_off"
+                    label="Revoke"
+                    @click="revoke(connection)"
+                  ></q-btn>
+                </q-card-actions>
+              </q-card>
+            </q-expansion-item>
+          </q-list>
+
+          <div v-if="revokedConnections.length" class="q-mt-md">
+            <q-toggle
+              v-model="showRevoked"
+              :label="revokedConnections.length + ' revoked connection' + (revokedConnections.length === 1 ? '' : 's')"
+              color="grey-7"
+            ></q-toggle>
+            <q-list v-if="showRevoked" dense separator class="q-mt-sm">
+              <q-item
+                v-for="connection in revokedConnections"
+                :key="connection.id"
+              >
+                <q-item-section avatar>
+                  <q-icon name="link_off" color="grey"></q-icon>
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label v-text="connection.name"></q-item-label>
+                  <q-item-label caption>
+                    Local client capability erased. Revoke it in the signer too.
+                  </q-item-label>
+                </q-item-section>
+                <q-item-section side>
+                  <q-badge color="grey" label="Revoked"></q-badge>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </div>
+        </q-card-section>
+      </q-card>
+    </div>
+
+    <div class="col-12 col-lg-4 q-gutter-y-md">
+      <q-card>
+        <q-card-section>
+          <div class="text-h6">What stays where</div>
+          <q-list class="q-mt-sm">
+            <q-item>
+              <q-item-section avatar>
+                <q-icon name="lock" color="positive"></q-icon>
+              </q-item-section>
+              <q-item-section>
+                <q-item-label>Your identity key</q-item-label>
+                <q-item-label caption>Stays in the remote signer.</q-item-label>
+              </q-item-section>
+            </q-item>
+            <q-item>
+              <q-item-section avatar>
+                <q-icon name="key" color="primary"></q-icon>
+              </q-item-section>
+              <q-item-section>
+                <q-item-label>Disposable client key</q-item-label>
+                <q-item-label caption
+                  >Encrypted in LNbits until revoked.</q-item-label
+                >
+              </q-item-section>
+            </q-item>
+            <q-item>
+              <q-item-section avatar>
+                <q-icon name="rule" color="amber-9"></q-icon>
+              </q-item-section>
+              <q-item-section>
+                <q-item-label>Final approval</q-item-label>
+                <q-item-label caption
+                  >The signer remains the authority.</q-item-label
+                >
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-card-section>
+      </q-card>
+
+      <q-card>
+        <q-card-section>
+          <div class="text-h6">Latest request</div>
+        </q-card-section>
+        <q-separator></q-separator>
+        <q-card-section v-if="!activeOperation" class="text-grey-7">
+          Connection requests and connection tests appear here. A normal signing
+          integration may handle its own result directly.
+        </q-card-section>
+        <q-card-section v-else class="q-gutter-md" aria-live="polite">
+          <div class="row items-center justify-between">
+            <div>
+              <div class="text-caption text-grey-7">Request</div>
+              <strong v-text="methodLabel(activeOperation.method)"></strong>
+            </div>
+            <q-badge
+              :color="operationColor(activeOperation.status)"
+              v-text="operationStatusLabel(activeOperation.status)"
+            ></q-badge>
+          </div>
+          <p
+            class="text-body2 q-mb-none"
+            v-text="operationHelp(activeOperation)"
+          ></p>
+          <q-banner
+            v-if="activeOperation.auth_url"
+            rounded
+            class="bg-amber-1 text-amber-10"
+          >
+            Your signer requires approval in its own secure page.
+            <div class="q-mt-sm">
+              <q-btn
+                unelevated
+                no-caps
+                color="amber-9"
+                text-color="white"
+                type="a"
+                target="_blank"
+                rel="noopener noreferrer"
+                :href="activeOperation.auth_url"
+                label="Open signer approval"
+              ></q-btn>
+            </div>
+          </q-banner>
+          <q-banner
+            v-if="activeOperation.error"
+            rounded
+            class="bg-red-1 text-red-10"
+          >
+            <span v-text="activeOperation.error"></span>
+          </q-banner>
+          <pre
+            v-if="activeOperation.result !== null"
+            class="externalsigner-result bg-blue-grey-1 q-pa-sm"
+            v-text="formatResult(activeOperation.result)"
+          ></pre>
+        </q-card-section>
+      </q-card>
+
+      <q-card>
+        <q-card-section>
+          <div class="text-h6">What connected does not prove</div>
+          <p class="q-mt-md q-mb-none text-grey-8">
+            It proves that the expected user key signed the identity challenge.
+            It does not prove that a later event was published, a payment
+            settled or anything happened in the physical world.
+          </p>
+        </q-card-section>
+      </q-card>
+    </div>
+  </div>
+</div>
+{% endblock %}

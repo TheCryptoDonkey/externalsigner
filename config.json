@@ -1,0 +1,28 @@
+{
+  "name": "External Signer",
+  "short_description": "Use a NIP-46 signer without importing an nsec",
+  "tile": "/externalsigner/static/icon.svg",
+  "version": "0.1.0",
+  "min_lnbits_version": "1.5.6",
+  "contributors": [
+    {
+      "name": "The Crypto Donkey",
+      "uri": "https://github.com/TheCryptoDonkey",
+      "role": "Developer"
+    }
+  ],
+  "images": [
+    {
+      "uri": "https://raw.githubusercontent.com/TheCryptoDonkey/externalsigner/main/static/images/external-signer-custody.webp"
+    },
+    {
+      "uri": "https://raw.githubusercontent.com/TheCryptoDonkey/externalsigner/main/static/images/onboarding.webp"
+    },
+    {
+      "uri": "https://raw.githubusercontent.com/TheCryptoDonkey/externalsigner/main/static/images/pairing.webp"
+    }
+  ],
+  "description_md": "https://raw.githubusercontent.com/TheCryptoDonkey/externalsigner/main/description.md",
+  "terms_and_conditions_md": "https://raw.githubusercontent.com/TheCryptoDonkey/externalsigner/main/toc.md",
+  "license": "MIT"
+}
