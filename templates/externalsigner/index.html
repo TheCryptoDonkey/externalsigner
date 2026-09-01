@@ -373,7 +373,7 @@
             </p>
           </div>
 
-          <q-list v-else separator>
+          <q-list v-else separator role="presentation">
             <q-expansion-item
               v-for="connection in activeConnections"
               :key="connection.id"
@@ -423,6 +423,7 @@
                   </div>
                   <lnbits-qrcode
                     :value="connection.pairing_uri"
+                    :show-buttons="false"
                     :options="{width: 280, margin: 2}"
                   ></lnbits-qrcode>
                   <div class="q-mt-md">
@@ -624,7 +625,7 @@
                   </q-item-label>
                 </q-item-section>
                 <q-item-section side>
-                  <q-badge color="grey" label="Revoked"></q-badge>
+                  <q-badge color="grey-9" label="Revoked"></q-badge>
                 </q-item-section>
               </q-item>
             </q-list>

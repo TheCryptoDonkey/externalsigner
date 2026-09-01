@@ -36,4 +36,14 @@ jobs:
           .audit-venv/bin/python -m pip freeze | grep -Ei \
             '^(lnbits|pillow|pyjwt|starlette)=='
       - name: Audit the complete inherited runtime
-        run: .audit-venv/bin/python -m pip_audit --strict
+        run: |
+          .audit-venv/bin/python -m pip_audit \
+            --strict --format json --output inherited-runtime-audit.json
+      - name: Preserve the machine-readable audit evidence
+        if: ${{ always() && hashFiles('inherited-runtime-audit.json') != '' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: inherited-runtime-audit-${{ matrix.name }}
+          path: inherited-runtime-audit.json
+          if-no-files-found: error
+          retention-days: 30

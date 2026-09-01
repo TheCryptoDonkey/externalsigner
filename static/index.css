@@ -77,6 +77,20 @@
   background: #542400 !important;
 }
 
+.q-dialog .externalsigner-revoke-action,
+.q-dialog .externalsigner-revoke-action .q-btn__content,
+.q-dialog .externalsigner-revoke-action .block {
+  color: #fff !important;
+  background: #8e0000 !important;
+}
+
+.q-dialog .externalsigner-revoke-cancel-action,
+.q-dialog .externalsigner-revoke-cancel-action .q-btn__content,
+.q-dialog .externalsigner-revoke-cancel-action .block {
+  color: #fff !important;
+  background: #212121 !important;
+}
+
 body.body--dark .externalsigner-secondary-action {
   color: #ff9b6a !important;
 }

@@ -74,10 +74,14 @@ First-user and accessibility acceptance is tracked by
 - [ ] A first-time user pairs by QR without verbal assistance.
 - [ ] The user can explain why an `nsec` must never be pasted into LNbits.
 - [ ] The user understands the requested permission preset before approval.
-- [ ] Error, expiry, retry, test and revoke journeys pass on desktop and mobile.
+- [x] Automated rendered error, expiry, retry, test and revoke action wiring
+      passes on desktop and mobile in light and dark themes.
+- [ ] A person completes the same journeys against a real signer on desktop and
+      mobile.
 - [x] Automated WCAG 2 A/AA, keyboard-opened route, contrast, mobile layout and
       200% text-reflow checks pass in light and dark themes.
-- [ ] Keyboard navigation, labels, contrast and screen-reader announcements pass.
+- [x] Automated keyboard activation, accessible labels and contrast checks pass.
+- [ ] Human keyboard-only and screen-reader announcements pass.
 - [x] Gallery images are generated/captured from the final release source and contain no secrets.
 
 ## Claims
