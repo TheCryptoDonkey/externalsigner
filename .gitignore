@@ -1,4 +1,5 @@
 .DS_Store
+.interop/
 .coverage
 .mypy_cache/
 .pytest_cache/

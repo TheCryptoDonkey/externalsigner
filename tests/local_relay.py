@@ -16,20 +16,31 @@ def free_port() -> int:
 class LocalNostrRelay:
     """Small in-process relay for transport and implementation tests."""
 
-    def __init__(self) -> None:
-        self.port = free_port()
+    def __init__(self, port: int | None = None) -> None:
+        self.port = port or free_port()
         self.url = f"ws://127.0.0.1:{self.port}"
         self.events: list[dict[str, Any]] = []
         self._subscriptions: dict[Any, dict[str, list[dict[str, Any]]]] = {}
         self._server: Any = None
 
     async def __aenter__(self) -> "LocalNostrRelay":
+        return await self.start()
+
+    async def __aexit__(self, *_args: object) -> None:
+        await self.stop()
+
+    async def start(self) -> "LocalNostrRelay":
+        if self._server is not None:
+            return self
         self._server = await websockets.serve(self._handle, "127.0.0.1", self.port)
         return self
 
-    async def __aexit__(self, *_args: object) -> None:
+    async def stop(self) -> None:
+        if self._server is None:
+            return
         self._server.close()
         await self._server.wait_closed()
+        self._server = None
 
     def has_subscription(self, subscription_id: str, recipient: str) -> bool:
         for subscriptions in self._subscriptions.values():
@@ -39,6 +50,14 @@ class LocalNostrRelay:
                 if any(recipient in item.get("#p", []) for item in filters):
                     return True
         return False
+
+    def has_recipient_subscription(self, recipient: str) -> bool:
+        return any(
+            recipient in item.get("#p", [])
+            for subscriptions in self._subscriptions.values()
+            for filters in subscriptions.values()
+            for item in filters
+        )
 
     async def _handle(self, websocket: Any) -> None:
         self._subscriptions[websocket] = {}

@@ -36,7 +36,7 @@ extend-immutable-calls = ["fastapi.Depends"]
 
 [tool.mypy]
 plugins = ["pydantic.mypy"]
-exclude = ["tests"]
+exclude = ["^(tests|tmp|docs|data|output)/"]
 
 [[tool.mypy.overrides]]
 module = ["lnbits.*", "loguru.*", "nostr_sdk.*"]

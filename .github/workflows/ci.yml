@@ -79,3 +79,35 @@ jobs:
             httpx pytest pytest-asyncio websockets
       - name: PostgreSQL migration and test suite
         run: make test
+
+  nak-interop:
+    name: nak v0.20.6 interop
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Create test environment
+        run: |
+          python -m venv .venv
+          .venv/bin/python -m pip install --upgrade pip
+          .venv/bin/python -m pip install \
+            "lnbits @ git+https://github.com/lnbits/lnbits.git@v1.5.6" \
+            httpx pytest pytest-asyncio websockets
+      - name: Download the exact released signer
+        run: |
+          mkdir -p .interop
+          curl --fail --location --retry 5 \
+            --output .interop/nak-v0.20.6 \
+            https://github.com/fiatjaf/nak/releases/download/v0.20.6/nak-v0.20.6-linux-amd64
+          echo "b44b36c792fbc3fb73b7ba3bbc94beda2219826271aa8d5f130f569c3817c3b9  .interop/nak-v0.20.6" \
+            | sha256sum --check --strict
+          chmod 0755 .interop/nak-v0.20.6
+          .interop/nak-v0.20.6 --version
+      - name: Released signer invitation, QR, restart and relay recovery
+        env:
+          DEBUG: "true"
+          NAK_PATH: .interop/nak-v0.20.6
+          PYTHONPATH: ..
+        run: .venv/bin/python -m pytest -vv tests/test_interop_nak.py

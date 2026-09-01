@@ -67,3 +67,40 @@ async def test_sdk_transport_targets_relay_and_receives_valid_subscription_event
             assert excluded.events == []
         finally:
             await asyncio.to_thread(transport.close)
+
+
+@pytest.mark.asyncio
+async def test_sdk_transport_restores_unchanged_subscription_after_relay_restart(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setattr(settings, "debug", True)
+    client_pubkey = derive_pubkey(Keys.generate().secret_key().to_hex())
+    relay = LocalNostrRelay()
+    transport = await asyncio.to_thread(NostrSdkTransport)
+    try:
+        await relay.start()
+        await asyncio.to_thread(
+            transport.reconcile,
+            {relay.url: [client_pubkey]},
+            "relay-recovery-test",
+        )
+        await _wait_for(lambda: relay.has_subscription("relay-recovery-test", client_pubkey))
+
+        await relay.stop()
+        # Give the SDK's relay task time to observe the closed WebSocket before
+        # the same endpoint becomes available again.
+        await asyncio.sleep(0.5)
+        await relay.start()
+        deadline = asyncio.get_running_loop().time() + 10
+        while not relay.has_subscription("relay-recovery-test", client_pubkey):
+            if asyncio.get_running_loop().time() >= deadline:
+                raise TimeoutError("Transport did not restore the relay subscription.")
+            await asyncio.to_thread(
+                transport.reconcile,
+                {relay.url: [client_pubkey]},
+                "relay-recovery-test",
+            )
+            await asyncio.sleep(0.1)
+    finally:
+        await asyncio.to_thread(transport.close)
+        await relay.stop()
