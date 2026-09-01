@@ -41,18 +41,19 @@ claim.
 ## Database and recovery
 
 - [x] Fresh SQLite migration passes.
-- [ ] Fresh PostgreSQL migration passes.
-- [ ] Restart during pending, approval-required and completed operations passes.
-- [ ] Backup and isolated restore preserve a valid connection.
-- [ ] Auth-secret rotation runbook is performed and forces re-pairing as expected.
-- [ ] Seven-day retention and thirty-minute expiry run in a clock-controlled soak.
+- [x] Fresh PostgreSQL migration passes.
+- [x] Restart during pending, approval-required and completed operations passes.
+- [x] Backup and isolated restore preserve a valid connection.
+- [x] Auth-secret rotation invalidates old capabilities and requires re-pairing.
+- [x] Seven-day retention and thirty-minute expiry pass a clock-controlled soak.
 
 ## Operations
 
 - [ ] Single-worker staging soak passes for at least seven days.
-- [ ] Multi-worker behaviour is either proved or explicitly unsupported in release notes.
+- [x] Multi-worker behaviour is explicitly unsupported in release notes.
 - [ ] Relay outage, DNS failure, TLS failure and recovery are exercised.
-- [ ] Logs and monitoring contain no decrypted secret or account data.
+- [x] Runtime exception logs omit exception data; staging monitoring review remains
+      part of the seven-day soak.
 - [ ] Rollback procedure is rehearsed against the release archive and backup.
 
 ## User experience

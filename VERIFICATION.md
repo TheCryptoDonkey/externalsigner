@@ -11,7 +11,7 @@ local test run into a public release.
 The ordinary suite passed on Python 3.12 and LNbits 1.5.6:
 
 ```text
-31 passed, 2 skipped
+38 passed, 2 skipped
 Ruff: passed
 Black: passed
 mypy: passed
@@ -22,7 +22,7 @@ pip check: passed
 The two skips are the deliberately opt-in independent-signer modules. Both
 were run separately and passed as recorded below.
 
-The same final-source ordinary suite also passed `31 passed, 2 skipped` on
+The same final-source ordinary suite also passed `38 passed, 2 skipped` on
 LNbits 1.6.0rc4 commit `a16dd7cee3b89785c69f08f41462e7a2cecb62d3`.
 
 Public CI run
@@ -48,6 +48,13 @@ published fixture; it contains no live pairing capability.
 This proves a source-mounted development installation. It does not prove an
 extension-manager archive install or an upgrade from a previous public
 release.
+
+An exact Git archive of the pre-release commit was also passed through LNbits
+1.5.6's `InstallableExtension.extract_archive()` path in isolated data and
+extension directories. LNbits accepted the top-level archive layout, copied the
+extension, found `config.json` and read version 0.1.0. This proves archive
+structure and extraction only. The real manager download, release hash and
+registry path remain blocked until a release exists.
 
 ## Independent signer
 
@@ -108,6 +115,37 @@ findings. These findings block a production go decision until the host stack is
 updated or each applicable finding has a written, time-bounded risk decision.
 The extension must not silently override LNbits' core framework versions.
 
+An exact local scan of LNbits development commit
+`a16dd7cee3b89785c69f08f41462e7a2cecb62d3` resolved Pillow 12.3.0 and reduced
+the result to 16 advisory rows in two inherited packages: PyJWT 2.12.1 and
+Starlette 0.48.0. This is an improvement, not a green production host. The
+decision and closure criteria are in
+[HOST_DEPENDENCIES.md](HOST_DEPENDENCIES.md).
+
+## PostgreSQL and recovery
+
+A fresh `postgres:16-alpine` database ran the real LNbits 1.5.6 core migration
+entry point followed by External Signer migrations 1 and 2. The complete
+ordinary suite then passed `35 passed, 2 skipped` on PostgreSQL.
+
+This run found and fixed a backend-specific defect: direct timestamp parameters
+must use LNbits' database-aware timestamp placeholder. The claim, rate-limit,
+timeout, pairing-expiry and retention queries now do so, and the same suite runs
+against PostgreSQL in public CI.
+
+A PostgreSQL custom-format backup containing an encrypted connected capability
+was restored into a separate database. With the matching LNbits auth secret,
+the restored process decrypted the disposable client capability and completed a
+NIP-46 `ping` round trip against the deterministic test signer transport. This
+proves database and encryption continuity; it does not claim a live remote
+signer or public relay participated in the restore rehearsal.
+
+The ordinary suite also advances a controlled clock across the thirty-minute
+request expiry and seven-day terminal-record retention boundaries. Separate
+tests prove recovery of sent, approval-required and completed operations after
+runtime state is discarded, auth-secret rotation invalidates old ciphertext,
+and runtime warning logs omit arbitrary exception data.
+
 ## Protocol and claim boundary
 
 The implementation was checked against current NIP-46. It keeps the remote
@@ -129,6 +167,6 @@ above. GitHub recognises the MIT licence; secret scanning, push protection and
 private vulnerability reporting are enabled.
 
 There is still no signed tag, release archive, archive hash, LNbits registry
-entry, extension-manager install, PostgreSQL run, staging soak or
-physical-device acceptance. Those remain release gates and are not implied by
-the public repository or green CI.
+entry, extension-manager install, staging soak or physical-device acceptance.
+Those remain release gates and are not implied by the public repository,
+database evidence or green extension CI.
