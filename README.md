@@ -13,7 +13,7 @@ request.
 > **Never paste an `nsec` into this extension.** You need a `bunker://` invite
 > from the signer, or a signer that can scan a `nostrconnect://` QR.
 
-![LNbits sends an encrypted request to a separate locked signer through Nostr relays](static/images/external-signer-custody.webp)
+![LNbits sends encrypted requests through three Nostr relays to a separate signer that retains the identity key](static/images/external-signer-custody-v2.webp)
 
 ## Current status
 
