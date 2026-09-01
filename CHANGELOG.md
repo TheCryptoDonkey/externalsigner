@@ -25,6 +25,8 @@
   permissions and oversized request or response data.
 - Add a first-use journey, plain-language status and recovery guidance,
   responsive dark/light styling and final-source browser screenshots.
+- Add public Axe WCAG 2 A/AA browser acceptance for light and dark themes,
+  keyboard-opened pairing dialogs, mobile layout and 200% text reflow.
 - Add operator, integration, architecture, contribution, security and release
   documentation plus CI and release workflows.
 - Treat one LNbits application worker as the complete supported deployment

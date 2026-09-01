@@ -39,11 +39,50 @@
   word-break: break-word;
 }
 
+.externalsigner-page h1,
+.externalsigner-page .text-h5,
+.externalsigner-page .text-h6,
+.externalsigner-dialog .text-h6 {
+  overflow-wrap: anywhere;
+}
+
+.externalsigner-page .q-icon,
+.externalsigner-dialog .q-icon {
+  overflow: hidden;
+}
+
 .externalsigner-result {
   max-height: 280px;
   overflow: auto;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+.externalsigner-key-warning {
+  color: #6d2700 !important;
+}
+
+.externalsigner-page .bg-amber-1.text-amber-10,
+.externalsigner-dialog .bg-amber-1.text-amber-10 {
+  color: #6b3400 !important;
+}
+
+.externalsigner-page .q-btn.bg-primary,
+.externalsigner-dialog .q-btn.bg-primary {
+  background: #b84100 !important;
+}
+
+.externalsigner-dialog .externalsigner-cancel-action {
+  color: #fff !important;
+  background: #542400 !important;
+}
+
+body.body--dark .externalsigner-secondary-action {
+  color: #ff9b6a !important;
+}
+
+body:not(.body--dark) .externalsigner-secondary-action {
+  color: #9a3600 !important;
 }
 
 body.body--dark .externalsigner-page .text-grey-7,

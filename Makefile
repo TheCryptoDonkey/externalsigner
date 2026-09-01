@@ -16,6 +16,7 @@ test:
 
 frontend:
 	npx --yes prettier@3.6.2 --check \
+		.github/workflows/ci.yml scripts/browser_acceptance.cjs \
 		static/index.js static/index.css static/routes.json \
 		templates/externalsigner/index.html config.json manifest.json
 
