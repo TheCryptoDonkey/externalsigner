@@ -138,3 +138,5 @@ instead of running older code over a newer database.
 Use [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) as the go/no-go record. A green
 unit suite is necessary, but does not substitute for a released archive,
 PostgreSQL evidence, restart recovery, dependency triage or a staging soak.
+Run that soak and each recovery rehearsal exactly as described in
+[STAGING.md](STAGING.md).

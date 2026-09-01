@@ -141,7 +141,8 @@ Restart LNbits, enable External Signer for a test account and follow the
 pairing guide above. Do not use an untagged checkout on a production server.
 
 Administrators should read [ADMIN.md](ADMIN.md) before a
-staging or production installation.
+staging or production installation. The exact seven-day evidence procedure is
+in [STAGING.md](STAGING.md).
 
 ## Use from another extension
 

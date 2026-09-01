@@ -6,8 +6,11 @@ dependencies from an extension install.
 
 ## Current decision
 
-**Production release is blocked.**  On 2026-09-01, strict `pip-audit` scans of
-fresh host environments found unresolved advisories inherited from LNbits.
+**Production release is blocked.** On 2026-09-02, LNbits' latest stable release
+was still `v1.5.6` and the pinned development candidate was still commit
+`a16dd7cee3b89785c69f08f41462e7a2cecb62d3`. Strict `pip-audit` scans of fresh
+host environments found unresolved advisories inherited from those LNbits
+sources.
 
 | LNbits source | Resolved vulnerable packages | Audit rows |
 | --- | --- | ---: |
@@ -17,6 +20,12 @@ fresh host environments found unresolved advisories inherited from LNbits.
 The development branch fixes the reported Pillow set by resolving 12.3.0.
 The audit still requires PyJWT 2.13.0 and, across the reported Starlette set,
 Starlette 1.3.1.  LNbits currently constrains those packages to older lines.
+
+LNbits' open
+[`Migrate to pydantic v2` issue](https://github.com/lnbits/lnbits/issues/3709)
+records part of the host-framework migration still required before the current
+FastAPI/Starlette stack can be upgraded safely. That upstream issue is context,
+not a promise that every advisory will be fixed by one change.
 
 No risk acceptance has been made.  Review this gate when LNbits publishes a
 compatible host version with the fixes, or when each applicable advisory has a
@@ -32,9 +41,10 @@ create an untested host combination.  A superficially green extension scan
 would therefore be misleading.
 
 The scheduled dependency workflow audits both the latest supported stable
-release and the exact development commit recorded above.  A failing audit is
-expected while this gate is open and must not be waived merely to publish a
-release.
+release and the exact development commit recorded above. It preserves a
+machine-readable JSON report even when findings make the job fail. A failing
+audit is expected while this gate is open and must not be waived merely to
+publish a release.
 
 ## Evidence needed to close the gate
 

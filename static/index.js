@@ -195,27 +195,38 @@ window.app = Vue.createApp({
       }
     },
     revoke(connection) {
-      LNbits.utils
-        .confirmDialog(
-          `Revoke ${connection.name}? LNbits will erase its local client capability and request signer-side logout. You should also remove this client in the signer.`,
-        )
-        .onOk(async () => {
-          try {
-            await LNbits.api.request(
-              "DELETE",
-              `/externalsigner/api/v1/connections/${connection.id}`,
-              null,
-            );
-            await this.loadConnections(true);
-            Quasar.Notify.create({
-              type: "positive",
-              message:
-                "Connection revoked locally. Revoke it in the signer too.",
-            });
-          } catch (error) {
-            LNbits.utils.notifyApiError(error);
-          }
-        });
+      Quasar.Dialog.create({
+        message: `Revoke ${connection.name}? LNbits will erase its local client capability and request signer-side logout. You should also remove this client in the signer.`,
+        ok: {
+          unelevated: true,
+          color: "red-10",
+          textColor: "white",
+          label: "Revoke",
+          class: "externalsigner-revoke-action",
+        },
+        cancel: {
+          unelevated: true,
+          color: "grey-10",
+          textColor: "white",
+          label: "Cancel",
+          class: "externalsigner-revoke-cancel-action",
+        },
+      }).onOk(async () => {
+        try {
+          await LNbits.api.request(
+            "DELETE",
+            `/externalsigner/api/v1/connections/${connection.id}`,
+            null,
+          );
+          await this.loadConnections(true);
+          Quasar.Notify.create({
+            type: "positive",
+            message: "Connection revoked locally. Revoke it in the signer too.",
+          });
+        } catch (error) {
+          LNbits.utils.notifyApiError(error);
+        }
+      });
     },
     watchOperation(operation) {
       if (!operation) return;
@@ -252,9 +263,9 @@ window.app = Vue.createApp({
     statusColor(status) {
       return (
         {
-          connected: "positive",
+          connected: "green-10",
           error: "negative",
-          revoked: "grey",
+          revoked: "grey-9",
           awaiting_signer: "amber-9",
           connecting: "blue",
           verifying: "purple",

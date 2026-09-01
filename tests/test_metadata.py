@@ -75,6 +75,7 @@ def test_licence_funding_and_document_location_policy():
         "INTEGRATION.md",
         "QUICKSTART.md",
         "RELEASE_CHECKLIST.md",
+        "STAGING.md",
         "VERIFICATION.md",
     ):
         assert (ROOT / name).is_file()
